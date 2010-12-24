@@ -28,7 +28,6 @@ checkconfig() {
         return 1
     fi
 }
-
 depend() {
 	# be quiet, since we have to run depend() also for the
 	# non-muxed init script, unfortunately.
@@ -86,8 +85,8 @@ start() {
 
 stop() {
     checkconfig || return 1
-
     cgroupmount=$(cgroup_get_mount)
+    stoptimeout=${GSTOPTIMEOUT:=15}
 
     if ! [ -d ${cgroupmount}/${CONTAINER} ]; then
         ewarn "${CONTAINER} doesn't seem to be started."
@@ -105,7 +104,12 @@ stop() {
     fi
     eend $?
 
-    sleep 15
+    while true; do
+	pgrep -P ${init_pid} > dev/null 2>&1 || break
+        sleep 1
+        stoptimeout=$((${stoptimeout} - 1))
+	[ ${stoptimeout} -le 0 ] && break
+    done
 
     missingprocs=$(pgrep -P ${init_pid})
 
