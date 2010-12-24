@@ -97,7 +97,12 @@ stop() {
     init_pid=$(head -n1 ${cgroupmount}/${CONTAINER}/tasks)
 
     ebegin "Shutting down system in ${CONTAINER}"
-    kill -INT ${init_pid}
+    if [[ -n ${graceshutdown} ]] && [[ -e ${graceshutdown} ]]; then
+    	export CONTAINER;
+	$(eval ${graceshutdown})
+    else
+    	kill -INT ${init_pid}
+    fi
     eend $?
 
     sleep 15
